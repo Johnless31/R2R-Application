@@ -2,6 +2,13 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+ENV HTTP_PROXY http://192.168.3.32:10809
+ENV HTTPS_PROXY http://192.168.3.32:10809
+ENV NO_PROXY localhost,127.0.0.1
+ENV http_proxy http://192.168.3.32:10809
+ENV https_proxy http://192.168.3.32:10809
+ENV no_proxy localhost,127.0.0.1
+
 # Install pnpm
 RUN npm install -g pnpm
 
