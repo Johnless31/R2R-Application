@@ -263,7 +263,7 @@ const SearchPage: React.FC = () => {
                             Score: {result.score.toFixed(4)}
                           </p>
                           <p className="text-sm mb-2">
-                            {result.metadata?.note_url || `Result ${index + 1}`}
+                            Score: {result.metadata?.note_url || `Result ${index + 1}`}
                           </p>
                           <Accordion
                             type="single"
