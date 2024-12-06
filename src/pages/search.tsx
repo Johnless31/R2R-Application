@@ -262,9 +262,20 @@ const SearchPage: React.FC = () => {
                           <p className="text-sm mb-2">
                             Score: {result.score.toFixed(4)}
                           </p>
-                          <p className="text-sm mb-2">
-                            Score: {result.metadata?.note_url || `Result ${index + 1}`}
-                          </p>
+                          {result.metadata?.note_url ? (
+                            <p className="text-sm mb-2">
+                              <a
+                                href={result.metadata.note_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:underline"
+                              >
+                                View Note
+                              </a>
+                            </p>
+                          ) : (
+                            <p className="text-sm mb-2">No URL available</p>
+                          )}
                           <Accordion
                             type="single"
                             collapsible

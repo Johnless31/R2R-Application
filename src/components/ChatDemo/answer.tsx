@@ -317,6 +317,16 @@ export const Answer: FC<{
                         <div className="line-clamp-4 text-zinc-300 break-words">
                           {description ?? ''}
                         </div>
+                        {metadata?.note_url && (
+                          <a
+                            href={metadata.note_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                          >
+                            View Note
+                          </a>
+                        )}
                       </div>
                     </div>
                   </PopoverContent>
