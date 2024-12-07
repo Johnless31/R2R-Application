@@ -54,7 +54,6 @@ const LoginPage: React.FC = () => {
     setError(null);
     try {
       const result = await login(email, password, sanitizedDeploymentUrl);
-      console.log(`Login successful. User role: ${result.userRole}`);
       setLoginSuccess(true);
     } catch (error) {
       console.error('Login failed:', error);
@@ -86,7 +85,6 @@ const LoginPage: React.FC = () => {
 
   const redirectAfterLogin = useCallback(() => {
     if (loginSuccess && authState.isAuthenticated) {
-      console.log('Redirecting to home page');
       router.push('/');
     }
   }, [loginSuccess, authState.isAuthenticated, router]);
@@ -184,10 +182,10 @@ const LoginPage: React.FC = () => {
 
   const checkDeploymentHealth = useCallback(async () => {
     try {
-      const response = await fetch(`${sanitizedDeploymentUrl}/v2/health`);
+      const response = await fetch(`${sanitizedDeploymentUrl}/v3/health`);
       const data = await response.json();
 
-      const isHealthy = data.results?.response?.trim().toLowerCase() === 'ok';
+      const isHealthy = data.results?.message?.trim().toLowerCase() === 'ok';
 
       setServerHealth(isHealthy);
       if (!isHealthy) {

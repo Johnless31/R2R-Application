@@ -1,4 +1,4 @@
-import { FileMinus, UserRoundX } from 'lucide-react';
+import { FileMinus, UserMinus, Minus } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -18,7 +18,7 @@ import { useUserContext } from '@/context/UserContext';
 export interface RemoveButtonProps {
   itemId: string;
   collectionId: string;
-  itemType: 'document' | 'user';
+  itemType: 'document' | 'user' | 'entity' | 'relationship' | 'community';
   onSuccess: () => void;
   showToast: (message: {
     title: string;
@@ -44,9 +44,30 @@ export const RemoveButton: React.FC<RemoveButtonProps> = ({
       }
 
       if (itemType === 'document') {
-        await client.removeDocumentFromCollection(itemId, collectionId);
+        await client.collections.removeDocument({
+          id: collectionId,
+          documentId: itemId,
+        });
       } else if (itemType === 'user') {
-        await client.removeUserFromCollection(itemId, collectionId);
+        await client.collections.removeUser({
+          id: collectionId,
+          userId: itemId,
+        });
+      } else if (itemType === 'entity') {
+        await client.graphs.removeEntity({
+          collectionId: collectionId,
+          entityId: itemId,
+        });
+      } else if (itemType === 'relationship') {
+        await client.graphs.removeRelationship({
+          collectionId: collectionId,
+          relationshipId: itemId,
+        });
+      } else if (itemType === 'community') {
+        await client.graphs.deleteCommunity({
+          collectionId: collectionId,
+          communityId: itemId,
+        });
       }
 
       showToast({
@@ -73,12 +94,21 @@ export const RemoveButton: React.FC<RemoveButtonProps> = ({
     }
   };
 
-  const Icon = itemType === 'document' ? FileMinus : UserRoundX;
+  const Icon =
+    itemType === 'document'
+      ? FileMinus
+      : itemType === 'user'
+        ? UserMinus
+        : Minus;
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button color="filled" shape="slim">
+        <Button
+          color="text_gray"
+          shape="slim"
+          tooltip={`Remove ${itemType} from collection`}
+        >
           <Icon className="h-6 w-6" />
         </Button>
       </AlertDialogTrigger>

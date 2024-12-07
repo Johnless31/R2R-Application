@@ -1,4 +1,5 @@
 import { Loader, FileSearch2, SlidersHorizontal } from 'lucide-react';
+import { DocumentResponse } from 'r2r-js';
 import React, { useState, useMemo } from 'react';
 
 import { DeleteButton } from '@/components/ChatDemo/deleteButton';
@@ -17,10 +18,12 @@ import {
   PopoverContent,
 } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
-import { IngestionStatus, KGExtractionStatus, DocumentInfoType } from '@/types';
+import { IngestionStatus, KGExtractionStatus } from '@/types';
+
+import ExtractButtonContainer from './ExtractContainer';
 
 interface DocumentsTableProps {
-  documents: DocumentInfoType[];
+  documents: DocumentResponse[];
   loading: boolean;
   onRefresh: () => void;
   pendingDocuments: string[];
@@ -29,7 +32,7 @@ interface DocumentsTableProps {
   onSelectAll: (selected: boolean) => void;
   onSelectItem: (itemId: string, selected: boolean) => void;
   selectedItems: string[];
-  hideActions?: boolean; // Optional prop to hide actions if needed
+  hideActions?: boolean;
   visibleColumns: Record<string, boolean>;
   onToggleColumn: (columnKey: string, isVisible: boolean) => void;
   totalEntries?: number;
@@ -73,10 +76,16 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
     onSelectItem(itemId, selected);
   };
 
-  const columns: Column<DocumentInfoType>[] = [
-    { key: 'title', label: 'Title', sortable: true },
+  const columns: Column<DocumentResponse>[] = [
+    {
+      key: 'title',
+      label: 'Title',
+      truncatedSubstring: true,
+      sortable: true,
+      copyable: true,
+    },
     { key: 'id', label: 'Document ID', truncate: true, copyable: true },
-    { key: 'user_id', label: 'User ID', truncate: true, copyable: true },
+    { key: 'owner_id', label: 'Owner ID', truncate: true, copyable: true },
     {
       key: 'collection_ids',
       label: 'Collection IDs',
@@ -113,14 +122,14 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
       },
     },
     {
-      key: 'kg_extraction_status',
-      label: 'KG Extraction',
+      key: 'extraction_status',
+      label: 'Extraction',
       filterable: true,
       filterType: 'multiselect',
       filterOptions: ['success', 'failed', 'pending'],
       renderCell: (doc) => {
         let variant: 'success' | 'destructive' | 'pending' = 'pending';
-        switch (doc.kg_extraction_status) {
+        switch (doc.extraction_status) {
           case KGExtractionStatus.SUCCESS:
             variant = 'success';
             break;
@@ -131,11 +140,10 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             variant = 'pending';
             break;
         }
-        return <Badge variant={variant}>{doc.kg_extraction_status}</Badge>;
+        return <Badge variant={variant}>{doc.extraction_status}</Badge>;
       },
-      selected: false,
     },
-    { key: 'type', label: 'Type', selected: false },
+    { key: 'document_type', label: 'Type', selected: false },
     {
       key: 'metadata',
       label: 'Metadata',
@@ -158,17 +166,19 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
     },
   ];
 
-  const renderActions = (doc: DocumentInfoType) =>
+  const renderActions = (doc: DocumentResponse) =>
     hideActions ? null : (
       <div className="flex space-x-1 justify-end">
+        {/* TODO: Add this back once the API supports it
         <UpdateButtonContainer
           id={doc.id}
           onUpdateSuccess={() => onRefresh()}
           showToast={toast}
-        />
+        /> */}
+        <ExtractButtonContainer id={doc.id} showToast={toast} />
         <DownloadFileContainer
           id={doc.id}
-          fileName={doc.title}
+          fileName={doc.title ? doc.title : ''}
           showToast={toast}
         />
         <Button
@@ -176,7 +186,7 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             setSelectedDocumentId(doc.id);
             setIsDocumentInfoDialogOpen(true);
           }}
-          color="filled"
+          color="text_gray"
           disabled={
             doc.ingestion_status !== IngestionStatus.SUCCESS &&
             doc.ingestion_status !== IngestionStatus.ENRICHED
@@ -271,8 +281,6 @@ const DocumentsTable: React.FC<DocumentsTableProps> = ({
             {!hideActions && (
               <div className="flex space-x-2">
                 <UploadButton
-                  userId={null}
-                  uploadedDocuments={documents}
                   setUploadedDocuments={() => {}}
                   onUploadSuccess={async () => {
                     await onRefresh();
