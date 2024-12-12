@@ -359,6 +359,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     if (passport && typeof passport === 'string' && !authState.isAuthenticated) {
       loginWithToken(passport, instanceUrl)
         .then(({ success }) => {
+          console.log(success)
           if (!success) {
             console.error('Failed to auto-login with passport');
           }
