@@ -354,38 +354,38 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // 自动登录逻辑
   useEffect(() => {
-  if (!router.isReady) return;
+    if (!router.isReady) return;
 
-  const passport = router.query.passport;
-  const instanceUrlQuery = router.query.instanceUrl;
-  let instanceUrl = 'http://127.0.0.1:7272';
-  console.log('url=' + router.query.instanceUrl);
-  if (
-    instanceUrlQuery &&
-    typeof instanceUrlQuery === 'string' &&
-    passport &&
-    typeof passport === 'string'
-  ) {
-    try {
-      instanceUrl = decodeURIComponent(atob(instanceUrlQuery));
-      console.log('instanceUrl=' + instanceUrl);
-    } catch (error) {
-      console.error('Failed to decode instanceUrl from base64:', error);
+    const passport = router.query.passport;
+    const instanceUrlQuery = router.query.instanceUrl;
+    let instanceUrl = 'http://127.0.0.1:7272';
+    console.log('url=' + router.query.instanceUrl);
+    if (
+      instanceUrlQuery &&
+      typeof instanceUrlQuery === 'string' &&
+      passport &&
+      typeof passport === 'string'
+    ) {
+      try {
+        instanceUrl = decodeURIComponent(atob(instanceUrlQuery));
+        console.log('instanceUrl=' + instanceUrl);
+      } catch (error) {
+        console.error('Failed to decode instanceUrl from base64:', error);
+      }
+      loginWithToken(passport, instanceUrl)
+        .then(({ success }) => {
+          if (success) {
+            router.push('/chat');
+          }
+          if (!success) {
+            console.error('Failed to auto-login with passport');
+          }
+        })
+        .catch((error) => {
+          console.error('Auto-login failed:', error);
+        });
     }
-    loginWithToken(passport, instanceUrl)
-      .then(({ success }) => {
-        if (success) {
-          router.push('/chat');
-        }
-        if (!success) {
-          console.error('Failed to auto-login with passport');
-        }
-      })
-      .catch((error) => {
-        console.error('Auto-login failed:', error);
-      });
-  }
-}, [router.query.passport, router.query.instanceUrl, router.isReady]);
+  }, [router.query.passport, router.query.instanceUrl, router.isReady]);
 
   const contextValue = React.useMemo(
     () => ({
