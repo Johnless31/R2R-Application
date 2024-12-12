@@ -352,6 +352,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [selectedModel]);
 
+  // 自动登录逻辑
+  useEffect(() => {
+    const passport = router.query.passport;
+    const instanceUrl = router.query.instanceUrl;
+    if (passport && typeof passport === 'string' && !authState.isAuthenticated) {
+      loginWithToken(passport, instanceUrl)
+        .then(({ success }) => {
+          if (!success) {
+            console.error('Failed to auto-login with passport');
+          }
+        })
+        .catch((error) => {
+          console.error('Auto-login failed:', error);
+        });
+    }
+  }, [router.query.passport, authState.isAuthenticated, pipeline]);
+
   const contextValue = React.useMemo(
     () => ({
       pipeline,
