@@ -356,10 +356,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const passport = router.query.passport;
     const instanceUrl = router.query.instanceUrl;
-    if (passport && typeof passport === 'string' && !authState.isAuthenticated) {
+    if (passport && instanceUrl && !authState.isAuthenticated) {
       loginWithToken(passport, instanceUrl)
         .then(({ success }) => {
-          console.log(success)
+          console.log(success);
           if (!success) {
             console.error('Failed to auto-login with passport');
           }
