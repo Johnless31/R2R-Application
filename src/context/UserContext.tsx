@@ -367,7 +367,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       typeof passport === 'string'
     ) {
       try {
-        instanceUrl = decodeURIComponent(atob(instanceUrlQuery));
+        instanceUrl = decodeURIComponent(instanceUrlQuery);
         console.log('instanceUrl=' + instanceUrl);
       } catch (error) {
         console.error('Failed to decode instanceUrl from base64:', error);
