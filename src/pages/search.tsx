@@ -30,7 +30,7 @@ const SearchPage: React.FC = () => {
   // Search results
   const [vectorSearchResults, setVectorSearchResults] = useState<any[]>([]);
   const [kgSearchResults, setKgSearchResults] = useState<any[]>([]);
-
+  const [likeOrderVectorSearchResults, setLikeOrderVectorSearchResults] = useState<any[]>([]);
   // Collections
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>(
@@ -152,8 +152,10 @@ const SearchPage: React.FC = () => {
         vectorSearchSettings,
         kgSearchSettings
       );
-
+      let vector_search_results = results.results.vector_search_results || []
+      vector_search_results.sort((a, b) => b.metadata.liked_count - a.metadata.liked_count);
       setVectorSearchResults(results.results.vector_search_results || []);
+      setLikeOrderVectorSearchResults(vector_search_results);
       setKgSearchResults(results.results.kg_search_results || []);
     } catch (error) {
       console.error('Error performing search:', error);
@@ -247,6 +249,7 @@ const SearchPage: React.FC = () => {
                   <TabsList>
                     <TabsTrigger value="vector">Vector Search</TabsTrigger>
                     <TabsTrigger value="kg">Knowledge Graph</TabsTrigger>
+                    <TabsTrigger value="likeVector">like Count Order</TabsTrigger>
                   </TabsList>
                   <TabsContent value="vector">
                     {vectorSearchResults.length > 0 ? (
@@ -330,6 +333,54 @@ const SearchPage: React.FC = () => {
                       ))
                     ) : (
                       <p>No knowledge graph results found.</p>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="likeVector">
+                    {likeOrderVectorSearchResults.length > 0 ? (
+                      likeOrderVectorSearchResults.map((result, index) => (
+                        <div
+                          key={index}
+                          className="mb-4 p-4 bg-zinc-800 rounded"
+                        >
+                          <h3 className="text-lg font-semibold mb-2">
+                            {result.metadata?.title || `Result ${index + 1}`}
+                          </h3>
+                          <p className="text-sm mb-2">{result.text}</p>
+                          <p className="text-sm mb-2">
+                            Score: {result.score.toFixed(4)}
+                          </p>
+                          {result.metadata?.note_url ? (
+                            <p className="text-sm mb-2">
+                              <a
+                                href={result.metadata.note_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:underline"
+                              >
+                                View Note
+                              </a>
+                            </p>
+                          ) : (
+                            <p className="text-sm mb-2">No URL available</p>
+                          )}
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                          >
+                            <AccordionItem value={`item-${index}`}>
+                              <AccordionTrigger>View Details</AccordionTrigger>
+                              <AccordionContent>
+                                <pre className="text-xs overflow-auto bg-zinc-900 p-4 rounded">
+                                  {JSON.stringify(result, null, 2)}
+                                </pre>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No vector search results found.</p>
                     )}
                   </TabsContent>
                 </Tabs>
