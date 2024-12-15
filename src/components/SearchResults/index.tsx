@@ -54,6 +54,16 @@ const VectorSearchResultItem: FC<{
           <br />
           Extraction ID: {extraction_id}
         </p>
+        {metadata?.note_url && (
+          <a
+            href={metadata.note_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            View Note
+          </a>
+        )}
       </div>
     </div>
   );
