@@ -2,6 +2,10 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+ENV http_proxy=http://172.27.16.1:10809
+ENV https_proxy=http://172.27.16.1:10809
+ENV no_proxy=localhost,127.0.0.1
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -38,6 +42,8 @@ COPY startup.sh /app/startup.sh
 
 # Ensure the startup script is executable
 RUN chmod +x /app/startup.sh
+
+RUN unset http_proxy https_proxy no_proxy
 
 # Expose the port the app runs on
 EXPOSE 3000

@@ -19,6 +19,15 @@ interface Collection {
   name: string;
 }
 
+interface VectorSearchResult {
+  score: number;
+  metadata: {
+    liked_count: number;
+    like_score?: number;
+    weight_score?: number; // 新增的属性
+  };
+}
+
 const SearchPage: React.FC = () => {
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { pipeline, getClient } = useUserContext();
@@ -30,7 +39,8 @@ const SearchPage: React.FC = () => {
   // Search results
   const [vectorSearchResults, setVectorSearchResults] = useState<any[]>([]);
   const [kgSearchResults, setKgSearchResults] = useState<any[]>([]);
-  const [likeOrderVectorSearchResults, setLikeOrderVectorSearchResults] = useState<any[]>([]);
+  const [likeOrderVectorSearchResults, setLikeOrderVectorSearchResults] =
+    useState<any[]>([]);
   // Collections
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>(
@@ -81,6 +91,49 @@ const SearchPage: React.FC = () => {
 
   const handleSwitchChange = (id: string, checked: boolean) => {
     updateSwitch(id, checked);
+  };
+
+  const normalizeMinMax = (
+    items: VectorSearchResult[]
+  ): VectorSearchResult[] => {
+    if (items.length === 0) return items;
+    const likedCounts = items.map((item) => item.metadata?.liked_count);
+    console.log('likedCounts=' + likedCounts);
+    const minLikedCount = Math.min(...likedCounts);
+    console.log('minLikedCount=' + minLikedCount);
+    const maxLikedCount = Math.max(...likedCounts);
+    console.log('maxLikedCount=' + maxLikedCount);
+    const normalizedItems = items.map((item) => {
+      const normalizedScore =
+        (Number(item.metadata?.liked_count) - minLikedCount) /
+        (maxLikedCount - minLikedCount);
+      console.log('normalizedScore=' + normalizedScore);
+      return {
+        ...item,
+        metadata: {
+          ...item.metadata,
+          like_score: normalizedScore,
+        },
+      };
+    });
+    return normalizedItems;
+  };
+
+  const calWeightScore = (
+    items: VectorSearchResult[]
+  ): VectorSearchResult[] => {
+    return items.map((item) => {
+      const score = item.score;
+      const like_score = item.metadata?.like_score || score;
+      const weight_score = score * 0.6 + like_score * 0.4;
+      return {
+        ...item,
+        metadata: {
+          ...item.metadata,
+          weight_score,
+        },
+      };
+    });
   };
 
   useEffect(() => {
@@ -152,10 +205,21 @@ const SearchPage: React.FC = () => {
         vectorSearchSettings,
         kgSearchSettings
       );
-      let vector_search_results = results.results.vector_search_results || []
-      vector_search_results.sort((a, b) => b.metadata.liked_count - a.metadata.liked_count);
+      const tmp_result = results.results.vector_search_results || [];
+      const like_score_result = normalizeMinMax(tmp_result);
+      const weight_score_result = calWeightScore(like_score_result);
+      console.log(weight_score_result);
+      const like_vector_search_results = weight_score_result
+        .filter(
+          (item: VectorSearchResult) =>
+            item.metadata?.weight_score !== undefined
+        )
+        .sort(
+          (a: VectorSearchResult, b: VectorSearchResult) =>
+            (b.metadata?.weight_score || 0) - (a.metadata?.weight_score || 0)
+        );
       setVectorSearchResults(results.results.vector_search_results || []);
-      setLikeOrderVectorSearchResults(vector_search_results);
+      setLikeOrderVectorSearchResults(like_vector_search_results);
       setKgSearchResults(results.results.kg_search_results || []);
     } catch (error) {
       console.error('Error performing search:', error);
@@ -245,11 +309,13 @@ const SearchPage: React.FC = () => {
             >
               <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-4">Search Results</h2>
-                <Tabs defaultValue="vector" className="w-full">
+                <Tabs defaultValue="likeVector" className="w-full">
                   <TabsList>
                     <TabsTrigger value="vector">Vector Search</TabsTrigger>
                     <TabsTrigger value="kg">Knowledge Graph</TabsTrigger>
-                    <TabsTrigger value="likeVector">like Count Order</TabsTrigger>
+                    <TabsTrigger value="likeVector">
+                      Weight(6+4) Order
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="vector">
                     {vectorSearchResults.length > 0 ? (
@@ -347,7 +413,10 @@ const SearchPage: React.FC = () => {
                           </h3>
                           <p className="text-sm mb-2">{result.text}</p>
                           <p className="text-sm mb-2">
-                            Score: {result.score.toFixed(4)}
+                            Weights: {result.metadata.weight_score.toFixed(4)}
+                          </p>
+                          <p className="text-sm mb-2">
+                            点赞数: {result.metadata.liked_count}
                           </p>
                           {result.metadata?.note_url ? (
                             <p className="text-sm mb-2">

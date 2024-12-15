@@ -41,6 +41,9 @@ const VectorSearchResultItem: FC<{
           </h3>
           <div className="flex-grow"></div>
           <span className="text-xs ml-2 whitespace-nowrap text-zinc-500">
+            Like Count: {metadata.liked_count}
+          </span>
+          <span className="text-xs ml-2 whitespace-nowrap text-zinc-500">
             Similarity Score: {score.toFixed(3)}
           </span>
         </div>
@@ -176,6 +179,15 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   entities,
   communities,
 }) => {
+  const likeOrderResults = vectorSearchResults
+    .filter(
+      (item: VectorSearchResult) => item.metadata?.liked_count !== undefined
+    )
+    .sort(
+      (a: VectorSearchResult, b: VectorSearchResult) =>
+        (b.metadata?.liked_count || 0) - (a.metadata?.liked_count || 0)
+    );
+  console.log(vectorSearchResults);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const handleClosePdfPreview = () => {
     setPdfPreviewOpen(false);
@@ -210,6 +222,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           >
             Vector Search
           </TabsTrigger>
+          <TabsTrigger
+            value="likeOrderResults"
+            disabled={likeOrderResults.length === 0}
+          >
+            Like Order
+          </TabsTrigger>
           <TabsTrigger value="kgEntities" disabled={entities.length === 0}>
             KG Entities
           </TabsTrigger>
@@ -223,6 +241,16 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         <TabsContent value="vectorSearch">
           <ResultCarousel
             items={vectorSearchResults.map((source) => ({
+              source,
+              onOpenPdfPreview: openPdfPreview,
+            }))}
+            ItemComponent={VectorSearchResultItem}
+            offset={0}
+          />
+        </TabsContent>
+        <TabsContent value="likeOrderResults">
+          <ResultCarousel
+            items={likeOrderResults.map((source) => ({
               source,
               onOpenPdfPreview: openPdfPreview,
             }))}
