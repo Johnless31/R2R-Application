@@ -157,17 +157,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const loginWithToken = useCallback(
     async (
       token: string,
-      instanceUrl: string
+      instanceUrl: string,
+      refreshToken?: string // 新增可选参数
     ): Promise<{ success: boolean; userRole: 'admin' | 'user' }> => {
       const newClient = new r2rClient(instanceUrl);
       try {
         const result = await newClient.loginWithToken(token);
 
-        sessionStorage.setItem('accessToken', result.access_token.token);
-
-        newClient.setTokens(result.access_token.token, '');
+        if (refreshToken) {
+          sessionStorage.setItem('accessToken', result.access_token.token);
+          sessionStorage.setItem('refreshToken', refreshToken);
+          newClient.setTokens(result.access_token.token, refreshToken);
+        } else {
+          sessionStorage.setItem('accessToken', result.access_token.token);
+          newClient.setTokens(result.access_token.token, '');
+        }
         setClient(newClient);
-
         let userRole: 'admin' | 'user' = 'user';
         try {
           await newClient.appSettings();
@@ -357,6 +362,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!router.isReady) return;
 
     const passport = router.query.passport;
+    const refreshToken = router.query.refreshToken;
     const instanceUrlQuery = router.query.instanceUrl;
     let instanceUrl = 'http://127.0.0.1:7272';
     console.log('url=' + router.query.instanceUrl);
@@ -364,7 +370,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       instanceUrlQuery &&
       typeof instanceUrlQuery === 'string' &&
       passport &&
-      typeof passport === 'string'
+      typeof passport === 'string' &&
+      refreshToken &&
+      typeof refreshToken === 'string'
     ) {
       try {
         instanceUrl = decodeURIComponent(instanceUrlQuery);
@@ -372,7 +380,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (error) {
         console.error('Failed to decode instanceUrl from base64:', error);
       }
-      loginWithToken(passport, instanceUrl)
+      loginWithToken(passport, instanceUrl, refreshToken)
         .then(({ success }) => {
           if (success) {
             router.push('/chat');
